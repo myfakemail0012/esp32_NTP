@@ -1,0 +1,13 @@
+menu "Application SNTP Module"
+    depends on WIFI && SNTP
+
+    config URL
+        string "SNTP Server URL"
+        default "pool.ntp.org"
+
+
+    module = SNTP
+    module-str = SNTP
+    rsource "../../main/Kconfig.log_level"
+
+endmenu

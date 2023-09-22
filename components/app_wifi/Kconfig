@@ -1,0 +1,15 @@
+menu "Application Wifi Module"
+    depends on  WIFI
+
+    config SSID
+        string "WiFi SSID to connect"
+        default ""
+
+    config PASSWORD
+        string "WiFi password to connect"
+        default ""
+        
+    module = WIFI
+    module-str = WIFI
+    rsource "../../main/Kconfig.log_level"
+endmenu

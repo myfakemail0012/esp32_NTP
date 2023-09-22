@@ -1,0 +1,19 @@
+mainmenu "Test WiFi application"
+
+menu "Test WiFi application"
+    config WIFI
+        bool "Application WiFi Module activate"
+        
+    config SNTP
+        depends on WIFI
+        bool "Application SNTP Module activate"
+
+#    rsource "drivers/wifi/Kconfig.projbuild"
+
+#    rsource "drivers/sntp/Kconfig.projbuild"
+
+   
+
+
+
+endmenu

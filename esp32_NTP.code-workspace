@@ -1,0 +1,35 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"_old": true,
+			"*.code-workspace": true
+		},
+		"files.associations": {
+			"esp_wifi.h": "c",
+			"*.inc": "c",
+			"cstring": "c",
+			"freertos.h": "c",
+			"ping_sock.h": "c",
+			"esp_netif_types.h": "c",
+			"esp_event.h": "c",
+			"esp_sntp.h": "c",
+			"*.tcc": "c",
+			"esp_log.h": "c",
+			"stdlib.h": "c",
+			"ets_sys.h": "c",
+			"esp_log_private.h": "c",
+			"sdkconfig.h": "c",
+			"iomanip": "c",
+			"freertosconfig.h": "c",
+			"wifi.h": "c",
+			"app_wifi.h": "c",
+			"app_sntp.h": "c",
+			"nvs_flash.h": "c"
+		}
+	}
+}
