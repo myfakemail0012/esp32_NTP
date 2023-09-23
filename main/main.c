@@ -216,13 +216,9 @@ void check_button_old(void *pvParameters)
 
 void start_check_gpio(void)
 {
-	static uint8_t ucParameterToPass;
 	TaskHandle_t xHandle = NULL;
 
-	// xTaskCreate(check_button, "Check button", 1058 * 2, &ucParameterToPass, tskIDLE_PRIORITY,
-	// 	    &xHandle);
-	// configASSERT(xHandle);
-	xTaskCreate(check_button, "Check button 1", 1058 * 2, (void *)&button1, tskIDLE_PRIORITY,
+	xTaskCreate(check_button, "Check button", 1058 * 2, (void *)&button1, tskIDLE_PRIORITY,
 		    &xHandle);
 	configASSERT(xHandle);
 	// if (xHandle != NULL)

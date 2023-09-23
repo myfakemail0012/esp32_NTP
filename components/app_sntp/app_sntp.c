@@ -18,13 +18,13 @@ static void time_sync_notification_cb(struct timeval *tv)
 static void initialize_sntp(void)
 {
 	ESP_LOGD(SNTP_LOG_TAG, "Initializing SNTP");
-	sntp_setoperatingmode(SNTP_OPMODE_POLL);
-	sntp_setservername(0, "pool.ntp.org");
-	sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+	esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+	esp_sntp_setservername(0, "pool.ntp.org");
+	esp_sntp_set_time_sync_notification_cb(time_sync_notification_cb);
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
-	sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+	esp_sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 #endif
-	sntp_init();
+	esp_sntp_init();
 }
 
 static void obtain_time(void)
@@ -37,8 +37,8 @@ static void obtain_time(void)
 	 * NTP server address could be aquired via DHCP,
 	 * see LWIP_DHCP_GET_NTP_SRV menuconfig option
 	 */
-#ifdef LWIP_DHCP_GET_NTP_SRV
-	sntp_servermode_dhcp(1);
+#if LWIP_DHCP_GET_NTP_SRV == 1
+	esp_sntp_servermode_dhcp(true);
 #endif
 
 	/* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
@@ -54,7 +54,7 @@ static void obtain_time(void)
 	struct tm timeinfo = {0};
 	int retry = 0;
 	const int retry_count = 10;
-	while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count)
+	while (esp_sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count)
 	{
 		ESP_LOGD(SNTP_LOG_TAG, "Waiting for system time to be set... (%d/%d)", retry,
 			 retry_count);
