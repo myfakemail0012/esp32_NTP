@@ -1,5 +1,5 @@
 choice "$(module)_LOG_LEVEL_CHOICE"
-	prompt "Max compiled-in log level for $(module-str)"
+	prompt "Log level for $(module-str)"
 	default $(module)_LOG_LEVEL_INF
 
 config $(module)_LOG_LEVEL_OFF

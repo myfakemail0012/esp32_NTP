@@ -1,0 +1,21 @@
+menu "Application buttons event"
+    config DEFAULT_BTN_HOLD_TIME_MS
+        int "Time in ms to detect button hold"
+        default 1000000
+
+    choice BTN_ACTIVE_LEVEL
+        bool "Select active level for buttons"
+        default BTN_ACTIVE_LOW_LEVEL
+
+        config BTN_ACTIVE_HIGHT_LEVEL
+            bool "Active level is HIGHT"
+
+        config BTN_ACTIVE_LOW_LEVEL
+            bool "Active level is LOW"
+        
+    endchoice
+
+    module = BTN
+    module-str = BTN
+    rsource "../../main/Kconfig.log_level"
+endmenu
