@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "time.h"
-#include "sdkconfig.h"
 
 #define SHOW_TASKS 0
 #define SHOW_TIME  1
@@ -17,18 +16,19 @@
 #include "freertos/event_groups.h"
 #include "esp_err.h"
 
+#include "sdkconfig.h"
+
 #include "app_wifi.h"
 #include "app_sntp.h"
 
 #include "driver/gpio.h"
-#include "freertos/portmacro.h"
 
 #define GPIO_INPUT_IO_0    0
 #define GPIO_INPUT_PIN_SEL (1ULL << GPIO_INPUT_IO_0)
 
 void gpio_init()
 {
-	gpio_config_t io_conf = {};
+	gpio_config_t io_conf;
 	// interrupt of rising edge
 	io_conf.intr_type = GPIO_INTR_DISABLE; // GPIO_INTR_POSEDGE;
 	// bit mask of the pins, use GPIO4/5 here
@@ -95,7 +95,7 @@ void check_button(void *pvParameters)
 #endif
 		}
 		oldlevel = level;
-		vTaskDelay(100 / portTICK_RATE_MS);
+		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 }
 
@@ -104,8 +104,8 @@ void start_check_gpio(void)
 	static uint8_t ucParameterToPass;
 	TaskHandle_t xHandle = NULL;
 
-	xTaskCreate(check_button, "Check button", configIDLE_TASK_STACK_SIZE * 2,
-		    &ucParameterToPass, tskIDLE_PRIORITY, &xHandle);
+	xTaskCreate(check_button, "Check button", 1058 * 2, &ucParameterToPass, tskIDLE_PRIORITY,
+		    &xHandle);
 	configASSERT(xHandle);
 
 	// if (xHandle != NULL)

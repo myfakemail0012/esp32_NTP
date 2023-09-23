@@ -29,7 +29,9 @@
 			"wifi.h": "c",
 			"app_wifi.h": "c",
 			"app_sntp.h": "c",
-			"nvs_flash.h": "c"
+			"nvs_flash.h": "c",
+			"portmacro.h": "c",
+			"gpio.h": "c"
 		}
 	}
 }
