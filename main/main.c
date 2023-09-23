@@ -22,9 +22,124 @@
 #include "app_sntp.h"
 
 #include "driver/gpio.h"
+#include "driver/gptimer.h"
 
 #define GPIO_INPUT_IO_0    0
 #define GPIO_INPUT_PIN_SEL (1ULL << GPIO_INPUT_IO_0)
+
+#define BTN_PRESSED_LEVEL  0
+#define BTN_RELEASED_LEVEL 1
+
+typedef enum
+{
+	BUTTON1 = 1,
+} e_buttons_t;
+
+typedef struct
+{
+	int pin;
+	e_buttons_t button;
+} s_buttons_t;
+
+const s_buttons_t button1 = {
+	.pin = GPIO_INPUT_IO_0,
+	.button = BUTTON1,
+};
+
+void button_press_event(e_buttons_t button)
+{
+	ESP_LOGD(LOG_TAG, "Press event");
+}
+
+void button_hold_event(e_buttons_t button)
+{
+	ESP_LOGD(LOG_TAG, "Hold event");
+}
+
+void button_release_event(e_buttons_t button)
+{
+	ESP_LOGD(LOG_TAG, "Release event");
+}
+
+void button_click_event(e_buttons_t button)
+{
+	ESP_LOGD(LOG_TAG, "Click event");
+}
+
+gptimer_handle_t gptimer = NULL;
+void check_button(void *param)
+{
+	s_buttons_t *button = (s_buttons_t *)param;
+	static int last_state = 1;
+
+	int current_state = gpio_get_level(button->pin);
+	uint64_t uptime = 0;
+	uint64_t last_time = 0;
+	ESP_ERROR_CHECK(gptimer_get_raw_count(gptimer, &last_time));
+
+	const uint64_t hold_time = 1000000;
+
+	static bool parsed = false;
+
+	while (true)
+	{
+		current_state = gpio_get_level(button->pin);
+		ESP_ERROR_CHECK(gptimer_get_raw_count(gptimer, &uptime));
+
+		if (current_state == last_state && (uptime - last_time < hold_time || parsed))
+		{
+			;
+		}
+		if (current_state == last_state && current_state == BTN_PRESSED_LEVEL &&
+		    (uptime - last_time >= hold_time && !parsed))
+		{
+			button_hold_event(button->button);
+			parsed = true;
+		}
+		if (current_state != last_state)
+		{
+			switch (current_state)
+			{
+			case BTN_PRESSED_LEVEL:
+				button_press_event(button->button);
+				parsed = false;
+				break;
+
+			case BTN_RELEASED_LEVEL:
+				button_release_event(button->button);
+				if (!parsed)
+				{
+					button_click_event(button->button);
+				}
+				break;
+			default:
+				break;
+			}
+			last_state = current_state;
+			last_time = uptime;
+		}
+
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+	}
+}
+
+void start_timer()
+{
+	gptimer_config_t timer_config = {
+		.clk_src = GPTIMER_CLK_SRC_DEFAULT,
+		.direction = GPTIMER_COUNT_UP,
+		.resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
+	};
+	ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
+	ESP_ERROR_CHECK(gptimer_enable(gptimer));
+	ESP_ERROR_CHECK(gptimer_start(gptimer));
+}
+
+void stop_timer()
+{
+	ESP_ERROR_CHECK(gptimer_stop(gptimer));
+	ESP_ERROR_CHECK(gptimer_disable(gptimer));
+}
 
 void gpio_init()
 {
@@ -78,7 +193,7 @@ void get_tasks()
 }
 #endif
 
-void check_button(void *pvParameters)
+void check_button_old(void *pvParameters)
 {
 	static int oldlevel = 1;
 	while (true)
@@ -104,10 +219,12 @@ void start_check_gpio(void)
 	static uint8_t ucParameterToPass;
 	TaskHandle_t xHandle = NULL;
 
-	xTaskCreate(check_button, "Check button", 1058 * 2, &ucParameterToPass, tskIDLE_PRIORITY,
+	// xTaskCreate(check_button, "Check button", 1058 * 2, &ucParameterToPass, tskIDLE_PRIORITY,
+	// 	    &xHandle);
+	// configASSERT(xHandle);
+	xTaskCreate(check_button, "Check button 1", 1058 * 2, (void *)&button1, tskIDLE_PRIORITY,
 		    &xHandle);
 	configASSERT(xHandle);
-
 	// if (xHandle != NULL)
 	// {
 	// 	vTaskDelete(xHandle);
@@ -127,6 +244,7 @@ void app_main(void)
 	vTaskDelay(10);
 	ESP_LOGD(LOG_TAG, "wifi_connection");
 	wifi_connect();
+	start_timer();
 
 	start_check_gpio();
 	while (1)
