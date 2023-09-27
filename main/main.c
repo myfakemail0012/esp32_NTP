@@ -1,10 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "time.h"
 
-#define SHOW_TASKS 1
-#define SHOW_TIME  1
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "freertos/task.h"
+#include "esp_err.h"
+
+#include "driver/gpio.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_WIFI
+#include "app_wifi.h"
+#endif
+#ifdef CONFIG_SNTP
+#include "app_sntp.h"
+#endif
+
+#include "app_ble.h"
+
+#include "button_events.h"
 
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #include "esp_log.h"
@@ -12,18 +29,8 @@
 #define LOG_TAG "MAIN"
 #endif
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/event_groups.h"
-#include "esp_err.h"
-
-#include "sdkconfig.h"
-
-#include "app_wifi.h"
-#include "app_sntp.h"
-
-#include "driver/gpio.h"
-
-#include "button_events.h"
+#define SHOW_TASKS 0
+#define SHOW_TIME  1
 
 #define BTN1_GPIO     GPIO_NUM_0
 #define BTN1_GPIO_SEL (1ULL << BTN1_GPIO)
@@ -50,7 +57,7 @@ button_events_t button1 = {
 	.btn_events_click_cb = button_click_event,
 	.btn_events_hold_cb = button_hold_event,
 	.btn_events_pressed_cb = button_press_event,
-	// .btn_events_released_cb = button_release_event,
+	.btn_events_released_cb = button_release_event,
 };
 
 button_events_t button2 = {
@@ -71,6 +78,10 @@ void button_press_event(int button)
 void button_hold_event(int button)
 {
 	ESP_LOGI(LOG_TAG, "Hold event (btn: %d)", button);
+	if (button == BUTTON1)
+	{
+		able_start_advertising();
+	}
 }
 
 void button_release_event(int button)
@@ -81,27 +92,34 @@ void button_release_event(int button)
 void button_click_event(int button)
 {
 	ESP_LOGI(LOG_TAG, "Click event (btn: %d)", button);
+	static uint8_t lvl = 100;
+	able_set_bat_level(lvl);
+	char *txt = "Sending new data via notify message";
+	able_notify_all(txt, strlen(txt));
+	lvl -= 5;
+	if (lvl <= 0 || lvl > 100)
+	{
+		lvl = 100;
+	}
 }
 
 void gpio_init(uint64_t mask)
 {
 	gpio_config_t io_conf;
-	// interrupt of rising edge
 	io_conf.intr_type = GPIO_INTR_DISABLE; // GPIO_INTR_POSEDGE;
-	// bit mask of the pins, use GPIO4/5 here
 	io_conf.pin_bit_mask = mask;
-	// set as input mode
 	io_conf.mode = GPIO_MODE_INPUT;
-	// enable pull-up mode
 	io_conf.pull_up_en = 1;
 	io_conf.pull_down_en = 0;
 	gpio_config(&io_conf);
 }
 
+#ifdef CONFIG_SNTP
 void time_sync_notification_cb()
 {
 	ESP_LOGI(LOG_TAG, "Notification of a time synchronization event");
 }
+#endif
 
 void print_current_time()
 {
@@ -119,6 +137,7 @@ void print_current_time()
 	ESP_LOGI(LOG_TAG, "The current date/time  is: %s", strftime_buf);
 }
 
+#ifdef CONFIG_WIFI
 void got_ip_cb(void)
 {
 	ESP_LOGD(LOG_TAG, "Got IP...");
@@ -126,6 +145,7 @@ void got_ip_cb(void)
 	sync_time();
 	print_current_time();
 }
+#endif
 
 #if SHOW_TASKS == 1
 void get_tasks()
@@ -141,15 +161,17 @@ void app_main(void)
 	esp_log_level_set(LOG_TAG, LOG_LOCAL_LEVEL);
 	ESP_LOGD(LOG_TAG, "Starting...");
 	gpio_init(BTN_SEL);
-	// gpio_init(BTN2_GPIO_SEL);
+
 	printf("Hello\n");
 
+#ifdef CONFIG_WIFI
 	ESP_LOGD(LOG_TAG, "wifi_init");
 	wifi_init(got_ip_cb);
 	sntp_start(time_sync_notification_cb);
 	vTaskDelay(10);
 	ESP_LOGD(LOG_TAG, "wifi_connection");
 	wifi_connect();
+#endif
 
 	if (btn_events_init(&button1) != 0)
 	{
@@ -166,7 +188,12 @@ void app_main(void)
 
 	btn_event_start_task(&button1);
 	btn_event_start_task(&button2);
+
+#if SHOW_TASKS == 1
 	get_tasks();
+#endif
+
+	able_init();
 
 	while (1)
 	{
