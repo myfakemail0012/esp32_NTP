@@ -23,6 +23,16 @@
 #define BATTERY_SVC_UUID        0x180F
 #define BATTERY_LEVEL_ATTR_UUID 0x2A19
 
+#define APP_SVC_UUID                                                                               \
+	0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3, 0x4D, 0xD4, 0x9E, 0x91, 0x9A, 0xC2, 0xF0, 0xB8, 0x5A,  \
+		0x0C
+#define APP_ATTR_READ_UUID                                                                         \
+	0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3, 0x4D, 0xD4, 0x9E, 0x91, 0x9B, 0xC2, 0xF0, 0xB8, 0x5A,  \
+		0x0C
+#define APP_ATTR_WRITE_UUID                                                                        \
+	0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3, 0x4D, 0xD4, 0x9E, 0x91, 0x9C, 0xC2, 0xF0, 0xB8, 0x5A,  \
+		0x0C
+
 #define MAX_CONNECT 3
 static int active_connections = 0;
 
@@ -35,7 +45,6 @@ static int ble_app_advertise(void);
 static uint16_t read_notify_handle;
 static uint16_t bat_handle;
 static uint16_t write_handle;
-static uint16_t read_handle;
 
 static int current_battery_level = 100;
 
@@ -116,27 +125,19 @@ static const struct ble_gatt_svc_def gatt_svcs[] = {
 				{0}},
 	},
 	{.type = BLE_GATT_SVC_TYPE_PRIMARY,
-	 .uuid = BLE_UUID128_DECLARE(0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3, 0x4D, 0xD4, 0x9E, 0x91,
-				     0x9A, 0xC2, 0xF0, 0xB8, 0x5A,
-				     0x0C), // Define UUID for device type
+	 .uuid = BLE_UUID128_DECLARE(APP_SVC_UUID), // Define UUID for device type
 	 .characteristics =
 		 (struct ble_gatt_chr_def[]){
 			 {
-				 .uuid = BLE_UUID128_DECLARE(0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3,
-							     0x4D, 0xD4, 0x9E, 0x91, 0x9B, 0xC2,
-							     0xF0, 0xB8, 0x5A,
-							     0x0C), // BLE_UUID16_DECLARE(0xFEF4),
-								    // // Define UUID for reading
+				 .uuid = BLE_UUID128_DECLARE(
+					 APP_ATTR_READ_UUID), // Define UUID for reading
 				 .flags = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
 				 .val_handle = &read_notify_handle,
 				 .access_cb = device_read,
 			 },
 			 {
-				 .uuid = BLE_UUID128_DECLARE(0xFB, 0x8D, 0x2C, 0xC1, 0xE0, 0xB3,
-							     0x4D, 0xD4, 0x9E, 0x91, 0x9C, 0xC2,
-							     0xF0, 0xB8, 0x5A,
-							     0x0C), // BLE_UUID16_DECLARE(0xDEAD),
-								    // // Define UUID for writing
+				 .uuid = BLE_UUID128_DECLARE(
+					 APP_ATTR_WRITE_UUID), // Define UUID for writing
 				 .flags = BLE_GATT_CHR_F_WRITE,
 				 .access_cb = device_write,
 				 .val_handle = &write_handle,
