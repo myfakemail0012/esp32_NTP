@@ -49,3 +49,10 @@ void btn_event_start_task(button_events_t *button);
  * @param button pointer to button_events_t structure.
  */
 void btn_event_stop_task(button_events_t *button);
+
+/**
+ * @brief Check button state.
+ * @param button pointer to button_events_t structure.
+ * @returns true if the button is pressed, false otherwise.
+ */
+bool is_btn_pressed(button_events_t *button);

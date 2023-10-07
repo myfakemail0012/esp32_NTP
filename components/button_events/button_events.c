@@ -196,3 +196,8 @@ void btn_event_stop_task(button_events_t *button)
 	}
 	ESP_LOGD(LOG_TAG, "Task stoped.");
 }
+
+bool is_btn_pressed(button_events_t *button)
+{
+	return gpio_get_level(button->pin) == BTN_PRESSED_LEVEL;
+}
