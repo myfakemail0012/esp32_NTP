@@ -12,14 +12,18 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_WIFI
+#if CONFIG_WIFI
 #include "app_wifi.h"
 #endif
-#ifdef CONFIG_SNTP
+#if CONFIG_SNTP
 #include "app_sntp.h"
 #endif
 
 #include "app_ble.h"
+
+// #include "app_spi.h"
+
+// #include "app_rtc.h"
 
 #include "button_events.h"
 
@@ -89,17 +93,24 @@ void button_release_event(int button)
 	ESP_LOGI(LOG_TAG, "Release event (btn: %d)", button);
 }
 
+uint8_t lvl = 100;
 void button_click_event(int button)
 {
 	ESP_LOGI(LOG_TAG, "Click event (btn: %d)", button);
-	static uint8_t lvl = 100;
-	able_set_bat_level(lvl);
-	char *txt = "Sending new data via notify message";
-	able_notify_all(txt, strlen(txt));
-	lvl -= 5;
-	if (lvl <= 0 || lvl > 100)
+	if (button == BUTTON1)
 	{
-		lvl = 100;
+		able_set_bat_level(lvl);
+		// char *txt = "Sending new data via notify message";
+		// able_notify_all(txt, strlen(txt));
+		lvl -= 5;
+		if (lvl <= 0 || lvl > 100)
+		{
+			lvl = 100;
+		}
+	}
+	if (button == BUTTON2)
+	{
+		able_clear_bonded();
 	}
 }
 
@@ -156,6 +167,16 @@ void get_tasks()
 }
 #endif
 
+// void get_seconds(void *param)
+// {
+// 	while (true)
+// 	{
+// 		uint8_t sec = artc_read_seconds();
+// 		ESP_LOGW(LOG_TAG, "Current second: %d", sec);
+// 		vTaskDelay(1000 / portTICK_PERIOD_MS);
+// 	}
+// }
+
 void app_main(void)
 {
 	esp_log_level_set(LOG_TAG, LOG_LOCAL_LEVEL);
@@ -186,17 +207,31 @@ void app_main(void)
 			;
 	}
 
-	btn_event_start_task(&button1);
-	btn_event_start_task(&button2);
-
 #if SHOW_TASKS == 1
 	get_tasks();
 #endif
 
 	able_init();
+	able_set_bat_level(lvl);
+	if (is_btn_pressed(&button1))
+	{
+		ESP_LOGD(LOG_TAG, "Deleting all bonded devices");
+		able_clear_bonded();
+		while (is_btn_pressed(&button1))
+		{
+			vTaskDelay(10);
+		}
+	}
+
+	btn_event_start_task(&button1);
+	btn_event_start_task(&button2);
+	// aspi_init();
+	// artc_init();
+
+	// xTaskCreate(get_seconds, "RTC_READ", 3000, NULL, tskIDLE_PRIORITY, NULL);
 
 	while (1)
 	{
-		vTaskDelay(100);
+		vTaskDelay(10);
 	}
 }

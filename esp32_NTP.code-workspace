@@ -44,7 +44,14 @@
 			"event_groups.h": "c",
 			"esp_nimble_cfg.h": "c",
 			"task.h": "c",
-			"ble_store.h": "c"
+			"ble_store.h": "c",
+			"esp_flash.h": "c",
+			"esp_flash_spi_init.h": "c",
+			"app_spi.h": "c",
+			"string.h": "c",
+			"stdint.h": "c",
+			"random": "c",
+			"limits": "c"
 		}
 	}
 }

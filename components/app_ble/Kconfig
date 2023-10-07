@@ -1,0 +1,26 @@
+menu "Application BLE Module"
+    config APP_BLE_DEVICE_NAME
+        string "Device name"
+        default "APP-BLE-Server"
+    
+    config APP_BLE_MAX_CONNECTIONS
+        int "Max number of connections"
+        range 1 5
+        default 3
+
+    choice APP_BLE_DRIVER_TYPE
+        prompt "NimBLE or BlueDroid"
+        default APP_BLE_DRIVER_NIMBLE
+
+        config APP_BLE_DRIVER_NIMBLE
+        bool "Select NimBLE driver"
+    
+        config APP_BLE_DRIVER_BLUEDROID
+        bool "Select BlueDroid driver"
+    endchoice 
+        
+        
+    module = ABLE
+    module-str = ABLE
+    rsource "../../main/Kconfig.log_level"
+endmenu
