@@ -99,14 +99,14 @@ void button_click_event(int button)
 	ESP_LOGI(LOG_TAG, "Click event (btn: %d)", button);
 	if (button == BUTTON1)
 	{
-		able_set_bat_level(lvl);
+		lvl -= 5;
 		// char *txt = "Sending new data via notify message";
 		// able_notify_all(txt, strlen(txt));
-		lvl -= 5;
 		if (lvl <= 0 || lvl > 100)
 		{
 			lvl = 100;
 		}
+		able_set_bat_level(lvl);
 	}
 	if (button == BUTTON2)
 	{
