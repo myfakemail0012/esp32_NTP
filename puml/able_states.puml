@@ -1,25 +1,25 @@
 @startuml
 
-state ZBLE_STATE_POWER_DOWN
-state ZBLE_STATE_IDLE
-state ZBLE_STATE_ADV
-state ZBLE_STATE_CONN
-state ZBLE_STATE_CONN_ADV
+state ABLE_STATE_POWER_DOWN
+state ABLE_STATE_IDLE
+state ABLE_STATE_ADV
+state ABLE_STATE_CONN
+state ABLE_STATE_CONN_ADV
 
-[*] -> ZBLE_STATE_POWER_DOWN
-ZBLE_STATE_POWER_DOWN --> ZBLE_STATE_IDLE : able_init()
+[*] -> ABLE_STATE_POWER_DOWN
+ABLE_STATE_POWER_DOWN --> ABLE_STATE_IDLE : able_init()
 
-ZBLE_STATE_IDLE -> ZBLE_STATE_ADV : able_adv_start()
-ZBLE_STATE_IDLE <- ZBLE_STATE_ADV : able_adv_stop()
-ZBLE_STATE_IDLE <[dotted]- ZBLE_STATE_ADV : on timeout (X)
+ABLE_STATE_IDLE -> ABLE_STATE_ADV : able_adv_start()
+ABLE_STATE_IDLE <- ABLE_STATE_ADV : able_adv_stop()
+ABLE_STATE_IDLE <[dotted]- ABLE_STATE_ADV : on timeout (X)
 
-ZBLE_STATE_ADV -> ZBLE_STATE_CONN : on connect
+ABLE_STATE_ADV -> ABLE_STATE_CONN : on connect
 
-ZBLE_STATE_CONN -[dotted]-> ZBLE_STATE_IDLE : all clients desconected
+ABLE_STATE_CONN -[dotted]-> ABLE_STATE_IDLE : all clients desconected
 
-ZBLE_STATE_CONN -> ZBLE_STATE_CONN_ADV : adv startet with connected clients
-ZBLE_STATE_CONN <[dotted]- ZBLE_STATE_CONN_ADV : on timeout (X)
+ABLE_STATE_CONN -> ABLE_STATE_CONN_ADV : adv startet with connected clients
+ABLE_STATE_CONN <[dotted]- ABLE_STATE_CONN_ADV : on timeout (X)
 
-ZBLE_STATE_IDLE -up-> ZBLE_STATE_POWER_DOWN : able_deinit()
+ABLE_STATE_IDLE -up-> ABLE_STATE_POWER_DOWN : able_deinit()
 
 @enduml
