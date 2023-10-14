@@ -890,6 +890,8 @@ esp_err_t able_init(void)
 			 __LINE__, ret);
 		return ret;
 	}
+
+	return ESP_OK;
 }
 
 static void able_battery_indicate(void)

@@ -1,5 +1,6 @@
 #pragma once
 #include <string.h>
+#include "esp_err.h"
 
 typedef enum
 {
@@ -24,10 +25,10 @@ typedef enum
 
 // int able_get_power_level_from_enum(able_powers_e lev);
 
-void able_init();
+esp_err_t able_init();
 // void able_deinit(); //????
 int able_start_advertising();
-void able_stop_advertising(); //?????
+void able_stop_advertising();
 void able_write_all(char *data, size_t data_len);
 void able_notify_all(char *data, size_t data_len);
 able_state_t able_get_state();
