@@ -24,15 +24,13 @@
 #define LOG_TAG "ABLE"
 #endif
 
-#define PROFILE_NUM     1
-#define PROFILE_APP_IDX 0
-#define ESP_APP_ID      0x55
+#define ESP_APP_ID 0x55
 
 #define ADV_CONFIG_FLAG      (1 << 0)
 #define SCAN_RSP_CONFIG_FLAG (1 << 1)
 
 /// Attributes State Machine
-enum
+enum BAS_e
 {
 	BAS_IDX_SVC,
 
@@ -43,7 +41,7 @@ enum
 
 	BAS_IDX_NB,
 };
-enum
+enum CUSTOM_e
 {
 	CUS_IDX_SVC,
 	CUS_IDX_BATT_LVL_CHAR,
@@ -264,8 +262,7 @@ static const esp_gatts_attr_db_t cus_att_db[CUS_IDX_NB] = {
 	// Custom level report Characteristic Declaration
 	[CUS_IDX_BATT_LVL_PRES_FMT] = {{ESP_GATT_AUTO_RSP},
 				       {ESP_UUID_LEN_16, (uint8_t *)&char_format_uuid,
-					ESP_GATT_PERM_READ, sizeof(my_format), sizeof(my_format),
-					(uint8_t *)&my_format}},
+					ESP_GATT_PERM_READ, 7, 7, (uint8_t *)&my_format}},
 };
 
 static void remove_conn_id(uint16_t id)
@@ -583,22 +580,10 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 		}
 	}
 
-	do
+	if (gatt_info.gatts_cb && gatts_if == ESP_GATT_IF_NONE)
 	{
-		int idx;
-		for (idx = 0; idx < PROFILE_NUM; idx++)
-		{
-			if (gatts_if == ESP_GATT_IF_NONE || /* ESP_GATT_IF_NONE, not specify a
-			certain gatt_if, need to call every profile cb function */
-			    gatts_if == gatt_info.gatts_if)
-			{
-				if (gatt_info.gatts_cb)
-				{
-					gatt_info.gatts_cb(event, gatts_if, param);
-				}
-			}
-		}
-	} while (0);
+		gatt_info.gatts_cb(event, gatts_if, param);
+	}
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -752,7 +737,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 	}
 }
 
-void able_init(void)
+esp_err_t able_init(void)
 {
 	esp_log_level_set(LOG_TAG, LOG_LOCAL_LEVEL);
 	esp_err_t ret;
@@ -773,14 +758,14 @@ void able_init(void)
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "%s init controller failed: %s", __func__, esp_err_to_name(ret));
-		return;
+		return ret;
 	}
 	ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "%s enable controller failed: %s", __func__,
 			 esp_err_to_name(ret));
-		return;
+		return ret;
 	}
 
 	ESP_LOGI(LOG_TAG, "%s init bluetooth", __func__);
@@ -788,26 +773,26 @@ void able_init(void)
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
-		return;
+		return ret;
 	}
 	ret = esp_bluedroid_enable();
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
-		return;
+		return ret;
 	}
 
 	ret = esp_ble_gatts_register_callback(gatts_event_handler);
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "gatts register error, error code = %x", ret);
-		return;
+		return ret;
 	}
 	ret = esp_ble_gap_register_callback(gap_event_handler);
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "gap register error, error code = %x", ret);
-		return;
+		return ret;
 	}
 
 	// esp_ble_gatts_create_attr_tab(bas_att_db, gatts_if, BAS_IDX_NB, 0);
@@ -816,7 +801,7 @@ void able_init(void)
 	if (ret)
 	{
 		ESP_LOGE(LOG_TAG, "gatts app register error, error code = %x", ret);
-		return;
+		return ret;
 	}
 
 	/* set the security iocap & auth_req & key size & init key response key parameters to the
@@ -832,21 +817,79 @@ void able_init(void)
 	uint32_t passkey = 123456;
 	uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE;
 	uint8_t oob_support = ESP_BLE_OOB_DISABLE;
-	esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey, sizeof(uint32_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option,
-				       sizeof(uint8_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(uint8_t));
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_SET_STATIC_PASSKEY, &passkey,
+					     sizeof(uint32_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req,
+					     sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
+					     &auth_option, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
 	/* If your BLE device acts as a Slave, the init_key means you hope which types of key of the
 	master should distribute to you, and the response key means which key you can distribute to
 	the master; If your BLE device acts as a master, the response key means you hope which types
 	of key of the slave should distribute to you, and the init key means which key you can
 	distribute to the slave. */
 	// esp_ble_gap_set_security_param(ESP_BLE_SM_PASSKEY, &passkey, sizeof(passkey));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
-	esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
+	ret = esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG,
+			 "esp_ble_gap_set_security_param error at line %d, error code = %x",
+			 __LINE__, ret);
+		return ret;
+	}
 }
 
 static void able_battery_indicate(void)
@@ -854,7 +897,7 @@ static void able_battery_indicate(void)
 	for (int i = 0; i < gatt_info.conn_count; ++i)
 	{
 		ESP_LOGD(LOG_TAG,
-			 "Sending indicate battery level. gatts_if:%d, conn_id: %d, char_handle: "
+			 "Sending indicate battery level. gatts_if: %d, conn_id: %d, char_handle: "
 			 "%d, "
 			 "level: %d",
 			 gatt_info.gatts_if, gatt_info.conn_ids[i],
@@ -903,7 +946,7 @@ able_state_t able_get_state()
 void able_set_bat_level(uint8_t level)
 {
 	battery_lev = level;
-	ESP_LOGI(LOG_TAG, "New battery level: %d", level);
+	ESP_LOGD(LOG_TAG, "New battery level: %d", level);
 	esp_ble_gatts_set_attr_value(bas_info.handles[BAS_IDX_BATT_LVL_VAL], sizeof(battery_lev),
 				     &battery_lev);
 	able_battery_indicate();
