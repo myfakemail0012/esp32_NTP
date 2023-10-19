@@ -136,3 +136,8 @@ esp_err_t aspi_write(uint64_t addr, uint8_t *write_buf, size_t length)
 	}
 	return ESP_OK;
 }
+
+esp_err_t aspi_erase_chip()
+{
+	return esp_flash_erase_chip(espflash);
+}
