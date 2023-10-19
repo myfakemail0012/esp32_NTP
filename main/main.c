@@ -21,7 +21,7 @@
 
 #include "app_ble.h"
 
-// #include "app_spi.h"
+#include "app_spi.h"
 
 // #include "app_rtc.h"
 
@@ -225,7 +225,7 @@ void app_main(void)
 
 	btn_event_start_task(&button1);
 	btn_event_start_task(&button2);
-	// aspi_init();
+	(void)aspi_init();
 	// artc_init();
 
 	// xTaskCreate(get_seconds, "RTC_READ", 3000, NULL, tskIDLE_PRIORITY, NULL);
