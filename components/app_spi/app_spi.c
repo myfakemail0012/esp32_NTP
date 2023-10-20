@@ -5,6 +5,7 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 
+#include "spi_flash_chip_driver.h"
 #include "esp_flash_spi_init.h"
 
 #define APP_SPI_CS_PIN   25
@@ -15,7 +16,7 @@
 // #define APP_SPI_IO1_PIN 35
 // #define APP_SPI_IO2_PIN 32
 // #define APP_SPI_IO3_PIN 33
-#define EEPROM_HOST      HSPI_HOST
+#define SPIFLASH_HOST    HSPI_HOST
 
 #define SPI_DMA_CHAN SPI_DMA_CH_AUTO
 
@@ -30,7 +31,7 @@ static esp_flash_t *espflash;
 esp_err_t aspi_init(void)
 {
 	esp_err_t ret;
-	ESP_LOGD(LOG_TAG, "Initializing bus SPI%d...", EEPROM_HOST + 1);
+	ESP_LOGD(LOG_TAG, "Initializing bus SPI%d...", SPIFLASH_HOST + 1);
 	spi_bus_config_t buscfg = {
 		.miso_io_num = APP_SPI_MISO_PIN,
 		.mosi_io_num = APP_SPI_MOSI_PIN,
@@ -57,7 +58,7 @@ esp_err_t aspi_init(void)
 	}
 
 	esp_flash_spi_device_config_t devconfig = {
-		.host_id = EEPROM_HOST,
+		.host_id = SPIFLASH_HOST,
 		.cs_id = 0,
 		.cs_io_num = APP_SPI_CS_PIN,
 		.io_mode = SPI_FLASH_SLOWRD,
@@ -71,7 +72,7 @@ esp_err_t aspi_init(void)
 		 buscfg.miso_io_num, buscfg.sclk_io_num, devconfig.cs_io_num);
 	ESP_LOGD(LOG_TAG, "DMA CHANNEL: %d", SPI_DMA_CHAN);
 
-	ret = spi_bus_initialize(EEPROM_HOST, &buscfg, SPI_DMA_CHAN);
+	ret = spi_bus_initialize(SPIFLASH_HOST, &buscfg, SPI_DMA_CHAN);
 	if (ret != 0)
 	{
 		ESP_LOGE(LOG_TAG, "Failed to initialize spi bus: %s (0x%x)", esp_err_to_name(ret),
@@ -110,11 +111,38 @@ esp_err_t aspi_init(void)
 
 esp_err_t aspi_deinit(void)
 {
-	return spi_bus_remove_flash_device(espflash);
+	esp_err_t ret;
+
+	ret = spi_bus_remove_flash_device(espflash);
+	if (ret != ESP_OK)
+	{
+		ESP_LOGE(LOG_TAG, "Failed to remove flash device: %s (0x%x)", esp_err_to_name(ret),
+			 ret);
+		return ret;
+	}
+	ret = spi_bus_free(SPIFLASH_HOST);
+	if (ret != ESP_OK)
+	{
+		ESP_LOGE(LOG_TAG, "Failed to free spi bus: %s (0x%x)", esp_err_to_name(ret), ret);
+		return ret;
+	}
+	return ESP_OK;
 }
 
 esp_err_t aspi_read(uint64_t addr, uint8_t *read_buf, size_t length)
 {
+	if (read_buf == NULL)
+	{
+		ESP_LOGE(LOG_TAG, "read_buf can't be NULL.");
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (length + addr > espflash->size)
+	{
+		ESP_LOGE(LOG_TAG, "Out of range.");
+		return ESP_ERR_INVALID_SIZE;
+	}
+
 	ESP_LOGD(LOG_TAG, "Reading %d bytes from %lld", length, addr);
 	esp_err_t ret = esp_flash_read(espflash, read_buf, addr, length);
 	if (ret != ESP_OK)
@@ -127,6 +155,18 @@ esp_err_t aspi_read(uint64_t addr, uint8_t *read_buf, size_t length)
 
 esp_err_t aspi_write(uint64_t addr, uint8_t *write_buf, size_t length)
 {
+	if (write_buf == NULL)
+	{
+		ESP_LOGE(LOG_TAG, "write_buf can't be NULL.");
+		return ESP_ERR_INVALID_ARG;
+	}
+
+	if (length + addr > espflash->size)
+	{
+		ESP_LOGE(LOG_TAG, "Out of range.");
+		return ESP_ERR_INVALID_SIZE;
+	}
+
 	ESP_LOGD(LOG_TAG, "Writing %d bytes from %lld", length, addr);
 	esp_err_t ret = esp_flash_write(espflash, write_buf, addr, length);
 	if (ret != ESP_OK)
@@ -140,4 +180,12 @@ esp_err_t aspi_write(uint64_t addr, uint8_t *write_buf, size_t length)
 esp_err_t aspi_erase_chip()
 {
 	return esp_flash_erase_chip(espflash);
+}
+
+esp_err_t aspi_erase_sector(uint64_t addr)
+{
+	const spi_flash_chip_t *chip_drv = espflash->chip_drv;
+	const uint32_t sectorSize = chip_drv->sector_size;
+	const uint32_t sector = addr / sectorSize;
+	return esp_flash_erase_region(espflash, sector, sectorSize);
 }

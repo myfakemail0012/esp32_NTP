@@ -13,18 +13,51 @@
 #include "esp_err.h"
 #include "inttypes.h"
 
-TEST_CASE("SPI test write / read", "[read/write]")
+TEST_CASE("SPI test init / deinit", "[init/deinit/pass]")
 {
 	esp_err_t ret = aspi_init();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	ret = aspi_erase_chip();
+	ret = aspi_deinit();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
+}
 
+TEST_CASE("SPI test read null buffer", "[read/fail]")
+{
+	esp_err_t ret = aspi_read(0, NULL, 0);
+	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ret);
+}
+TEST_CASE("SPI test read out of range", "[read/fail]")
+{
+	uint8_t arr[1];
+	esp_err_t ret = aspi_read(0, arr, 100000000);
+	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, ret);
+}
+
+TEST_CASE("SPI test write null buffer", "[write/fail]")
+{
+	esp_err_t ret = aspi_write(0, NULL, 0);
+	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ret);
+}
+TEST_CASE("SPI test write out of range", "[write/fail]")
+{
+	uint8_t arr[1];
+	esp_err_t ret = aspi_write(0, arr, 100000000);
+	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, ret);
+}
+
+TEST_CASE("SPI test write / read / erase", "[read/write/erase/pass]")
+{
 	char *txt = "My test string";
 
 	const size_t txt_len = strlen(txt);
 	const unsigned long long addr = 0x10;
+
+	esp_err_t ret = aspi_init();
+	TEST_ASSERT_EQUAL(ESP_OK, ret);
+
+	ret = aspi_erase_sector(addr);
+	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
 	ret = aspi_write(addr, (uint8_t *)txt, txt_len);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
@@ -34,7 +67,7 @@ TEST_CASE("SPI test write / read", "[read/write]")
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 	TEST_ASSERT_EQUAL_STRING_LEN(txt, read_buf, txt_len);
 
-	ret = aspi_erase_chip();
+	ret = aspi_erase_sector(addr);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
 	uint8_t data;
@@ -46,4 +79,3 @@ TEST_CASE("SPI test write / read", "[read/write]")
 	ret = aspi_deinit();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 }
-// Expected 'My test string' Was 'Lh $ Sd `dring'
