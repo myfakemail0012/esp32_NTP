@@ -12,16 +12,18 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
-#if CONFIG_WIFI
+#if CONFIG_WIFI == 1
 #include "app_wifi.h"
 #endif
-#if CONFIG_SNTP
+#if CONFIG_SNTP == 1
 #include "app_sntp.h"
 #endif
 
+#if CONFIG_APP_BLE == 1
 #include "app_ble.h"
+#endif
 
-#include "app_spi.h"
+#include "app_spiflash.h"
 
 // #include "app_rtc.h"
 
@@ -84,7 +86,9 @@ void button_hold_event(int button)
 	ESP_LOGI(LOG_TAG, "Hold event (btn: %d)", button);
 	if (button == BUTTON1)
 	{
+#if CONFIG_APP_BLE == 1
 		able_start_advertising();
+#endif
 	}
 }
 
@@ -99,6 +103,7 @@ void button_click_event(int button)
 	ESP_LOGI(LOG_TAG, "Click event (btn: %d)", button);
 	if (button == BUTTON1)
 	{
+#if CONFIG_APP_BLE == 1
 		lvl -= 5;
 		// char *txt = "Sending new data via notify message";
 		// able_notify_all(txt, strlen(txt));
@@ -107,10 +112,13 @@ void button_click_event(int button)
 			lvl = 100;
 		}
 		able_set_bat_level(lvl);
+#endif
 	}
 	if (button == BUTTON2)
 	{
+#if CONFIG_APP_BLE == 1
 		able_clear_bonded();
+#endif
 	}
 }
 
@@ -211,6 +219,7 @@ void app_main(void)
 	get_tasks();
 #endif
 
+#if CONFIG_APP_BLE == 1
 	able_init();
 	able_set_bat_level(lvl);
 	if (is_btn_pressed(&button1))
@@ -222,6 +231,7 @@ void app_main(void)
 			vTaskDelay(10);
 		}
 	}
+#endif
 
 	btn_event_start_task(&button1);
 	btn_event_start_task(&button2);

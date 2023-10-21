@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_event.h"
@@ -34,7 +33,7 @@
 		0x0C
 
 #define MAX_CONNECT 3
-static int active_connections = 0;
+static uint8_t active_connections = 0;
 
 static able_state_t global_state = ABLE_IDLE;
 static uint16_t conn_handle_list[MAX_CONNECT];
@@ -95,7 +94,7 @@ static int bat_read(uint16_t con_handle, uint16_t attr_handle, struct ble_gatt_a
 	return 0;
 }
 
-void able_set_bat_level(int level)
+void able_set_bat_level(uint8_t level)
 {
 	// int res = ble_gap_security_initiate(glob_conn_handle);
 	current_battery_level = level;
@@ -345,4 +344,19 @@ void able_notify_all(char *data, size_t data_len)
 able_state_t able_get_state()
 {
 	return global_state;
+}
+
+void able_clear_bonded(void)
+{
+	int ret = ble_store_clear();
+	if (ret)
+	{
+		ESP_LOGE(LOG_TAG, "Error deleting bonded devices.");
+		return;
+	}
+}
+
+uint8_t able_get_active_connection_count()
+{
+	return active_connections;
 }

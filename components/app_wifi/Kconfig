@@ -1,5 +1,5 @@
 menu "Application Wifi Module"
-    depends on  WIFI
+    depends on WIFI
 
     config SSID
         string "WiFi SSID to connect"

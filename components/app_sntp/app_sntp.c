@@ -1,5 +1,4 @@
 #include "esp_sntp.h"
-#include "sdkconfig.h"
 #include "app_sntp.h"
 
 #define LOG_LOCAL_LEVEL CONFIG_SNTP_LOG_LEVEL

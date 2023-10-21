@@ -1,9 +1,9 @@
+#include "sdkconfig.h"
 #include <stdio.h>
 
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
-#include "sdkconfig.h"
 
 #define LOG_LOCAL_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include "esp_log.h"

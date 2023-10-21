@@ -1,0 +1,26 @@
+menu "Application SPI Flash Module"
+
+    config SPI_CS_PIN
+        int "SPI Flash CS Pin nummber"
+        default 25
+
+    config SPI_SCK_PIN
+        int "SPI Flash SCK Pin nummber"
+        default 26
+        
+    config SPI_MOSI_PIN
+        int "SPI Flash MOSI Pin nummber"
+        default 33
+        
+    config SPI_MISO_PIN
+        int "SPI Flash MISO Pin nummber"
+        default 35
+
+    config SPI_CHIPERASE_TIMEOUT_MS
+        int "SPI Chip erase timeout in ms"
+        default 60000
+        
+    module = SPIFLASH
+    module-str = SPIFLASH
+    rsource "../../main/Kconfig.log_level"
+endmenu

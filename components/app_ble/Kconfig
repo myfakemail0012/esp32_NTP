@@ -1,14 +1,21 @@
 menu "Application BLE Module"
+    config APP_BLE
+        bool "Enable BLE Driver"
+        default false
+
     config APP_BLE_DEVICE_NAME
+        depends on APP_BLE
         string "Device name"
         default "APP-BLE-Server"
     
     config APP_BLE_MAX_CONNECTIONS
+        depends on APP_BLE
         int "Max number of connections"
         range 1 5
         default 3
 
     choice APP_BLE_DRIVER_TYPE
+        depends on APP_BLE
         prompt "NimBLE or BlueDroid"
         default APP_BLE_DRIVER_NIMBLE
 
