@@ -6,42 +6,42 @@
 
 #define CHIP_SIZE (16384 * 1024)
 
-TEST_CASE("SPI test init / deinit", "[init/deinit/pass]")
+TEST_CASE("SPI_FLASH test init / deinit", "[ASPIFLASH]")
 {
-	TEST_ASSERT_EQUAL(ASPI_IDLE, aspi_get_status());
+	TEST_ASSERT_EQUAL(ASPI_IDLE, aspi_flash_get_status());
 
-	esp_err_t ret = aspi_init();
+	esp_err_t ret = aspi_flash_init();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	ret = aspi_deinit();
+	ret = aspi_flash_deinit();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 }
 
-TEST_CASE("SPI test read null buffer", "[read/fail]")
+TEST_CASE("SPI_FLASH test read null buffer", "[ASPIFLASH]")
 {
-	esp_err_t ret = aspi_read(0, NULL, 0);
+	esp_err_t ret = aspi_flash_read(0, NULL, 0);
 	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ret);
 }
-TEST_CASE("SPI test read out of range", "[read/fail]")
+TEST_CASE("SPI_FLASH test read out of range", "[ASPIFLASH]")
 {
 	uint8_t arr[1];
-	esp_err_t ret = aspi_read(0, arr, 100000000);
+	esp_err_t ret = aspi_flash_read(0, arr, 100000000);
 	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, ret);
 }
 
-TEST_CASE("SPI test write null buffer", "[write/fail]")
+TEST_CASE("SPI_FLASH test write null buffer", "[ASPIFLASH]")
 {
-	esp_err_t ret = aspi_write(0, NULL, 0);
+	esp_err_t ret = aspi_flash_write(0, NULL, 0);
 	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, ret);
 }
-TEST_CASE("SPI test write out of range", "[write/fail]")
+TEST_CASE("SPI_FLASH test write out of range", "[ASPIFLASH]")
 {
 	uint8_t arr[1];
-	esp_err_t ret = aspi_write(0, arr, 100000000);
+	esp_err_t ret = aspi_flash_write(0, arr, 100000000);
 	TEST_ASSERT_EQUAL(ESP_ERR_INVALID_SIZE, ret);
 }
 
-TEST_CASE("SPI test write / read / erase", "[read/write/erase/pass]")
+TEST_CASE("SPI_FLASH test write / read / erase", "[ASPIFLASH]")
 {
 	char *txt = "My test string";
 
@@ -50,43 +50,43 @@ TEST_CASE("SPI test write / read / erase", "[read/write/erase/pass]")
 
 	esp_err_t ret;
 
-	if (aspi_get_status() == ASPI_IDLE)
+	if (aspi_flash_get_status() == ASPI_IDLE)
 	{
-		ret = aspi_init();
+		ret = aspi_flash_init();
 		TEST_ASSERT_EQUAL(ESP_OK, ret);
 	}
 
-	ret = aspi_erase_sector(addr);
+	ret = aspi_flash_erase_sector(addr);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
-	ret = aspi_write(addr, (uint8_t *)txt, txt_len);
+	ret = aspi_flash_write(addr, (uint8_t *)txt, txt_len);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
 	char *read_buf[txt_len];
-	ret = aspi_read(addr, (uint8_t *)read_buf, txt_len);
+	ret = aspi_flash_read(addr, (uint8_t *)read_buf, txt_len);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 	TEST_ASSERT_EQUAL_STRING_LEN(txt, read_buf, txt_len);
 
-	ret = aspi_erase_sector(addr);
+	ret = aspi_flash_erase_sector(addr);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
 	uint8_t data;
 
-	ret = aspi_read(addr, &data, 1);
+	ret = aspi_flash_read(addr, &data, 1);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 	TEST_ASSERT_EQUAL(0xFF, data);
 
-	ret = aspi_deinit();
+	ret = aspi_flash_deinit();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 }
 
-TEST_CASE("SPI test erase chip", "[erase/pass]")
+TEST_CASE("SPI_FLASH test erase chip", "[ASPIFLASH]")
 {
 	uint8_t data = 0xEF;
 
@@ -94,33 +94,33 @@ TEST_CASE("SPI test erase chip", "[erase/pass]")
 
 	esp_err_t ret;
 
-	if (aspi_get_status() == ASPI_IDLE)
+	if (aspi_flash_get_status() == ASPI_IDLE)
 	{
-		ret = aspi_init();
+		ret = aspi_flash_init();
 		TEST_ASSERT_EQUAL(ESP_OK, ret);
 	}
-	ret = aspi_erase_sector(addr);
+	ret = aspi_flash_erase_sector(addr);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
-	ret = aspi_write(addr, &data, 1);
+	ret = aspi_flash_write(addr, &data, 1);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
 	uint8_t read_data;
-	ret = aspi_read(addr, &read_data, 1);
+	ret = aspi_flash_read(addr, &read_data, 1);
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 	TEST_ASSERT_EQUAL(data, read_data);
 
-	ret = aspi_erase_chip();
+	ret = aspi_flash_erase_chip();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 
-	aspi_wait_until_free();
+	aspi_flash_wait_until_free();
 
-	ret = aspi_read(addr, &read_data, 1);
-	esp_err_t ret1 = aspi_deinit();
+	ret = aspi_flash_read(addr, &read_data, 1);
+	esp_err_t ret1 = aspi_flash_deinit();
 	TEST_ASSERT_EQUAL(ESP_OK, ret);
 	TEST_ASSERT_EQUAL(ESP_OK, ret1);
 	TEST_ASSERT_EQUAL(0xFF, read_data);

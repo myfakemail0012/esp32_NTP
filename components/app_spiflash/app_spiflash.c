@@ -33,7 +33,7 @@
 
 static esp_flash_t *espflash;
 
-static aspi_status_e aspi_flash_status = ASPI_IDLE;
+static aspi_flash_status_e aspi_flash_flash_status = ASPI_IDLE;
 
 static esp_err_t check_write_protect_and_disable()
 {
@@ -137,7 +137,7 @@ static esp_err_t impl_erase_chip(esp_flash_t *chip)
 	return ESP_OK;
 }
 
-esp_err_t aspi_init(void)
+esp_err_t aspi_flash_init(void)
 {
 	esp_log_level_set(LOG_TAG, LOG_LOCAL_LEVEL);
 	esp_err_t ret;
@@ -217,11 +217,11 @@ esp_err_t aspi_init(void)
 		 espflash->size / 1024, id);
 
 	// espflash->host->driver->erase_chip = impl_erase_chip;
-	aspi_flash_status = ASPI_INITED;
+	aspi_flash_flash_status = ASPI_INITED;
 	return ESP_OK;
 }
 
-esp_err_t aspi_deinit(void)
+esp_err_t aspi_flash_deinit(void)
 {
 	esp_err_t ret;
 
@@ -238,11 +238,11 @@ esp_err_t aspi_deinit(void)
 		ESP_LOGE(LOG_TAG, "Failed to free spi bus: %s (0x%x)", esp_err_to_name(ret), ret);
 		return ret;
 	}
-	aspi_flash_status = ASPI_IDLE;
+	aspi_flash_flash_status = ASPI_IDLE;
 	return ESP_OK;
 }
 
-esp_err_t aspi_read(uint32_t addr, uint8_t *read_buf, size_t length)
+esp_err_t aspi_flash_read(uint32_t addr, uint8_t *read_buf, size_t length)
 {
 	ESP_LOGD(LOG_TAG, "Reading...");
 	if (espflash->busy)
@@ -273,7 +273,7 @@ esp_err_t aspi_read(uint32_t addr, uint8_t *read_buf, size_t length)
 	return ESP_OK;
 }
 
-esp_err_t aspi_write(uint32_t addr, uint8_t *write_buf, size_t length)
+esp_err_t aspi_flash_write(uint32_t addr, uint8_t *write_buf, size_t length)
 {
 	ESP_LOGD(LOG_TAG, "Writing...");
 
@@ -308,7 +308,7 @@ esp_err_t aspi_write(uint32_t addr, uint8_t *write_buf, size_t length)
 	return ESP_OK;
 }
 
-esp_err_t aspi_erase_chip()
+esp_err_t aspi_flash_erase_chip()
 {
 	bool busy;
 	check_flash_busy(espflash, &busy);
@@ -322,7 +322,7 @@ esp_err_t aspi_erase_chip()
 	// erase
 }
 
-esp_err_t aspi_erase_sector(uint32_t addr)
+esp_err_t aspi_flash_erase_sector(uint32_t addr)
 {
 	ESP_LOGD(LOG_TAG, "Erasing sector");
 
@@ -363,12 +363,12 @@ esp_err_t aspi_erase_sector(uint32_t addr)
 	return ESP_OK;
 }
 
-aspi_status_e aspi_get_status()
+aspi_flash_status_e aspi_flash_get_status()
 {
-	return aspi_flash_status;
+	return aspi_flash_flash_status;
 }
 
-esp_err_t aspi_wait_until_free()
+esp_err_t aspi_flash_wait_until_free()
 {
 	int32_t wait_time = wait_until_free(espflash);
 	if (wait_time < 0)
@@ -380,12 +380,12 @@ esp_err_t aspi_wait_until_free()
 	return ESP_OK;
 }
 
-bool aspi_is_busy()
+bool aspi_flash_is_busy()
 {
 	if (!esp_flash_chip_driver_initialized(espflash))
 	{
 		ESP_LOGE(LOG_TAG, "Flash driver not initialized");
-		aspi_flash_status = ASPI_IDLE;
+		aspi_flash_flash_status = ASPI_IDLE;
 		return false;
 	}
 	bool busy;

@@ -1,0 +1,10 @@
+menu "Application Test components select"
+
+    config APP_TEST_ASPI
+        bool "Test SPI component"
+        default y
+        
+    config APP_TEST_ASPIFLASH
+        bool "Test SPI Flash component"
+        default n
+endmenu

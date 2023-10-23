@@ -1,7 +1,7 @@
 menu "Application SNTP Module"
-    depends on WIFI && SNTP
 
     config URL
+        depends on WIFI && SNTP
         string "SNTP Server URL"
         default "pool.ntp.org"
 

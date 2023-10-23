@@ -1,0 +1,9 @@
+menu "Application SPI Module"
+    config APP_SPI_CLOCK_MHZ
+        int "SPI Clock frequency in MHz"
+        default 8
+
+    module = SPI
+    module-str = SPI
+    rsource "../../main/Kconfig.log_level"
+endmenu

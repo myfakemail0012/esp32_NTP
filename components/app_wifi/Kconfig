@@ -1,11 +1,12 @@
 menu "Application Wifi Module"
-    depends on WIFI
 
     config SSID
+        depends on WIFI
         string "WiFi SSID to connect"
         default ""
 
     config PASSWORD
+        depends on WIFI
         string "WiFi password to connect"
         default ""
         
